@@ -12,7 +12,7 @@ import progressbar
 import warnings
 import time
 
-@nb.jit(nopython=True)
+
 class InstrumentedPCA(BaseEstimator):
     """
     This class implements the IPCA algorithm by Kelly, Pruitt, Su (2017).
@@ -77,7 +77,7 @@ class InstrumentedPCA(BaseEstimator):
             if k != 'self':
                 setattr(self, k, v)
 
-
+    @nb.jit(nopython=True)
     def fit(self, X, y, indices=None, PSF=None, Gamma=None,
             Factors=None, data_type="portfolio", label_ind=False, **kwargs):
         """
@@ -265,7 +265,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Gamma, Factors
 
-
+    @nb.jit(nopython=True)
     def fit_path(self, X, y, indices=None, PSF=None, alpha_l=None,
                  n_splits=10, split_method=GroupKFold, n_jobs=1,
                  backend="loky", **kwargs):
@@ -351,7 +351,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return cvmse
 
-
+    @nb.jit(nopython=True)
     def predict(self, X=None, indices=None, W=None, mean_factor=False,
                 data_type="panel", label_ind=False):
         """wrapper around different data type predict methods
@@ -472,7 +472,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return pred
 
-
+    @nb.jit(nopython=True)
     def predict_panel(self, X, indices, T, mean_factor=False):
         """
         Predicts fitted values for a previously fitted regressor + panel data
@@ -525,7 +525,7 @@ class InstrumentedPCA(BaseEstimator):
                     .dot(self.Factors[:, t]))
         return ypred
 
-
+    @nb.jit(nopython=True)
     def predict_portfolio(self, W, L, T, mean_factor=False):
         """
         Predicts fitted values for a previously fitted regressor + portfolios
@@ -575,7 +575,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Qpred
 
-
+    @nb.jit(nopython=True)
     def score(self, X, y=None, indices=None, mean_factor=False,
               data_type="panel"):
         """generate R^2
@@ -847,7 +847,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return pval
 
-
+    @nb.jit(nopython=True)
     def predictOOS(self, X=None, y=None, indices=None, mean_factor=False):
         """
         Predicts time t+1 observation using an out-of-sample design.
@@ -914,7 +914,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return ypred
 
-
+    @nb.jit(nopython=True)
     def _fit_ipca(self, X=None, y=None, indices=None, PSF=None, Q=None,
                   W=None, val_obs=None, Gamma=None, Factors=None, quiet=False,
                   data_type="portfolio", **kwargs):
@@ -1036,7 +1036,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Gamma_New, Factor_New
 
-
+    @nb.jit(nopython=True)
     def _ALS_fit_portfolio(self, Gamma_Old, Q, W, val_obs, PSF=None, **kwargs):
         """Alternating least squares procedure to fit params
 
@@ -1130,7 +1130,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Gamma_New, F_New
 
-
+    @nb.jit(nopython=True)
     def _ALS_fit_panel(self, Gamma_Old, X, y, indices, PSF=None, **kwargs):
         """Alternating least squares procedure to fit params
 
