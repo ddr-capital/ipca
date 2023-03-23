@@ -4,6 +4,7 @@ from sklearn.linear_model import ElasticNet
 from sklearn.metrics import r2_score
 from joblib import Parallel, delayed
 from numba import jit
+import numba as njit
 import pandas as pd
 import numpy as np
 import scipy as sp
@@ -11,6 +12,7 @@ import progressbar
 import warnings
 import time
 
+@njit
 class InstrumentedPCA(BaseEstimator):
     """
     This class implements the IPCA algorithm by Kelly, Pruitt, Su (2017).
@@ -1224,7 +1226,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Gamma_New, F_New
 
-
+@njit
 def _prep_input(X, y=None, indices=None):
     """handle mapping from different inputs type to consistent internal data
 
@@ -1353,7 +1355,7 @@ def _prep_input(X, y=None, indices=None):
 
     return X, y, indices, metad
 
-
+@njit
 def _build_portfolio(X, y, indices, metad):
     """ Converts a stacked panel of data where each row corresponds to an
     observation (i, t) into a tensor of dimensions (N, L, T) where N is the
@@ -1438,7 +1440,7 @@ def _build_portfolio(X, y, indices, metad):
     # return portfolio data
     return Q, W, val_obs
 
-
+@njit
 def _Ft_fit_portfolio(Gamma_Old, W_t, Q_t):
     """helper func to parallelize F ALS fit"""
 
@@ -1447,7 +1449,7 @@ def _Ft_fit_portfolio(Gamma_Old, W_t, Q_t):
 
     return np.squeeze(_numba_solve(m1, m2.reshape((-1, 1))))
 
-
+@njit
 def _Ft_fit_PSF_portfolio(Gamma_Old, W_t, Q_t, PSF_t, K, Ktilde):
     """helper func to parallelize F ALS fit with observed factors"""
 
@@ -1457,7 +1459,7 @@ def _Ft_fit_PSF_portfolio(Gamma_Old, W_t, Q_t, PSF_t, K, Ktilde):
 
     return np.squeeze(_numba_solve(m1, m2.reshape((-1, 1))))
 
-
+@njit
 def _Ft_fit_panel(Gamma_Old, X_t, y_t):
     """fits F_t using panel data"""
 
@@ -1466,7 +1468,7 @@ def _Ft_fit_panel(Gamma_Old, X_t, y_t):
 
     return Ft
 
-
+@njit
 def _Ft_fit_PSF_panel(Gamma_Old, X_t, y_t, PSF_t, K, Ktilde):
     """fits F_t using panel data with PSF"""
 
@@ -1476,7 +1478,7 @@ def _Ft_fit_PSF_panel(Gamma_Old, X_t, y_t, PSF_t, K, Ktilde):
 
     return Ft
 
-
+@njit
 def _Gamma_fit_portfolio(F_New, Q, W, val_obs, PSF, L, K, Ktilde, T):
     """helper function for fitting gamma without panel"""
 
@@ -1523,7 +1525,7 @@ def _Gamma_fit_portfolio(F_New, Q, W, val_obs, PSF, L, K, Ktilde, T):
 
     return Gamma_New
 
-
+@njit
 def _Gamma_fit_panel(F_New, X, y, indices, PSF, L, Ktilde, alpha, l1_ratio,
                      **kwargs):
     """helper function for estimating vectorized Gamma with panel"""
@@ -1555,7 +1557,7 @@ def _Gamma_fit_panel(F_New, X, y, indices, PSF, L, Ktilde, alpha, l1_ratio,
 
     return gamma
 
-
+@njit
 def _fit_cv(model, X, y, indices, PSF, n_splits, split_method, alpha,
             **kwargs):
     """inner function for fit_path doing CV
@@ -1636,7 +1638,7 @@ def _fit_cv(model, X, y, indices, PSF, n_splits, split_method, alpha,
 
     return np.array(mse_l)
 
-
+@njit
 def _BS_Walpha_sub(model, n, d):
     L, T = model.metad["L"], model.metad["T"]
     Q_b = np.full((L, T), np.nan)
@@ -1666,7 +1668,7 @@ def _BS_Walpha_sub(model, n, d):
 
     return Walpha_b
 
-
+@njit
 def _BS_Wbeta_sub(model, n, d, l):
     L, T = model.metad["L"], model.metad["T"]
     Q_b = np.full((L, T), np.nan)
@@ -1698,6 +1700,7 @@ def _BS_Wbeta_sub(model, n, d, l):
     Wbeta_l_b = np.trace(Wbeta_l_b)
     return Wbeta_l_b
 
+@njit
 def _BS_Wdelta_sub(model, n, d):
         L, T = model.metad["L"], model.metad["T"]
         Q_b = np.full((L, T), np.nan)
