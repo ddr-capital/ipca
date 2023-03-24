@@ -3,13 +3,15 @@ from sklearn.model_selection import GroupKFold
 from sklearn.linear_model import ElasticNet
 from sklearn.metrics import r2_score
 from joblib import Parallel, delayed
-from numba import jit
+# from numba import jit
+import numba as nb
 import pandas as pd
 import numpy as np
 import scipy as sp
 import progressbar
 import warnings
 import time
+
 
 class InstrumentedPCA(BaseEstimator):
     """
@@ -75,7 +77,7 @@ class InstrumentedPCA(BaseEstimator):
             if k != 'self':
                 setattr(self, k, v)
 
-
+    @nb.jit(nopython=True)
     def fit(self, X, y, indices=None, PSF=None, Gamma=None,
             Factors=None, data_type="portfolio", label_ind=False, **kwargs):
         """
@@ -263,7 +265,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Gamma, Factors
 
-
+    @nb.jit(nopython=True)
     def fit_path(self, X, y, indices=None, PSF=None, alpha_l=None,
                  n_splits=10, split_method=GroupKFold, n_jobs=1,
                  backend="loky", **kwargs):
@@ -349,7 +351,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return cvmse
 
-
+    @nb.jit(nopython=True)
     def predict(self, X=None, indices=None, W=None, mean_factor=False,
                 data_type="panel", label_ind=False):
         """wrapper around different data type predict methods
@@ -470,7 +472,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return pred
 
-
+    @nb.jit(nopython=True)
     def predict_panel(self, X, indices, T, mean_factor=False):
         """
         Predicts fitted values for a previously fitted regressor + panel data
@@ -523,7 +525,7 @@ class InstrumentedPCA(BaseEstimator):
                     .dot(self.Factors[:, t]))
         return ypred
 
-
+    @nb.jit(nopython=True)
     def predict_portfolio(self, W, L, T, mean_factor=False):
         """
         Predicts fitted values for a previously fitted regressor + portfolios
@@ -573,7 +575,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Qpred
 
-
+    @nb.jit(nopython=True)
     def score(self, X, y=None, indices=None, mean_factor=False,
               data_type="panel"):
         """generate R^2
@@ -845,7 +847,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return pval
 
-
+    @nb.jit(nopython=True)
     def predictOOS(self, X=None, y=None, indices=None, mean_factor=False):
         """
         Predicts time t+1 observation using an out-of-sample design.
@@ -912,7 +914,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return ypred
 
-
+    @nb.jit(nopython=True)
     def _fit_ipca(self, X=None, y=None, indices=None, PSF=None, Q=None,
                   W=None, val_obs=None, Gamma=None, Factors=None, quiet=False,
                   data_type="portfolio", **kwargs):
@@ -1034,7 +1036,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Gamma_New, Factor_New
 
-
+    @nb.jit(nopython=True)
     def _ALS_fit_portfolio(self, Gamma_Old, Q, W, val_obs, PSF=None, **kwargs):
         """Alternating least squares procedure to fit params
 
@@ -1128,7 +1130,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Gamma_New, F_New
 
-
+    @nb.jit(nopython=True)
     def _ALS_fit_panel(self, Gamma_Old, X, y, indices, PSF=None, **kwargs):
         """Alternating least squares procedure to fit params
 
@@ -1224,7 +1226,7 @@ class InstrumentedPCA(BaseEstimator):
 
         return Gamma_New, F_New
 
-
+@nb.jit(nopython=True)
 def _prep_input(X, y=None, indices=None):
     """handle mapping from different inputs type to consistent internal data
 
@@ -1353,7 +1355,7 @@ def _prep_input(X, y=None, indices=None):
 
     return X, y, indices, metad
 
-
+@nb.jit(nopython=True)
 def _build_portfolio(X, y, indices, metad):
     """ Converts a stacked panel of data where each row corresponds to an
     observation (i, t) into a tensor of dimensions (N, L, T) where N is the
@@ -1438,7 +1440,7 @@ def _build_portfolio(X, y, indices, metad):
     # return portfolio data
     return Q, W, val_obs
 
-
+@nb.jit(nopython=True)
 def _Ft_fit_portfolio(Gamma_Old, W_t, Q_t):
     """helper func to parallelize F ALS fit"""
 
@@ -1447,7 +1449,7 @@ def _Ft_fit_portfolio(Gamma_Old, W_t, Q_t):
 
     return np.squeeze(_numba_solve(m1, m2.reshape((-1, 1))))
 
-
+@nb.jit(nopython=True)
 def _Ft_fit_PSF_portfolio(Gamma_Old, W_t, Q_t, PSF_t, K, Ktilde):
     """helper func to parallelize F ALS fit with observed factors"""
 
@@ -1457,7 +1459,7 @@ def _Ft_fit_PSF_portfolio(Gamma_Old, W_t, Q_t, PSF_t, K, Ktilde):
 
     return np.squeeze(_numba_solve(m1, m2.reshape((-1, 1))))
 
-
+@nb.jit(nopython=True)
 def _Ft_fit_panel(Gamma_Old, X_t, y_t):
     """fits F_t using panel data"""
 
@@ -1466,7 +1468,7 @@ def _Ft_fit_panel(Gamma_Old, X_t, y_t):
 
     return Ft
 
-
+@nb.jit(nopython=True)
 def _Ft_fit_PSF_panel(Gamma_Old, X_t, y_t, PSF_t, K, Ktilde):
     """fits F_t using panel data with PSF"""
 
@@ -1476,7 +1478,7 @@ def _Ft_fit_PSF_panel(Gamma_Old, X_t, y_t, PSF_t, K, Ktilde):
 
     return Ft
 
-
+@nb.jit(nopython=True)
 def _Gamma_fit_portfolio(F_New, Q, W, val_obs, PSF, L, K, Ktilde, T):
     """helper function for fitting gamma without panel"""
 
@@ -1523,7 +1525,7 @@ def _Gamma_fit_portfolio(F_New, Q, W, val_obs, PSF, L, K, Ktilde, T):
 
     return Gamma_New
 
-
+@nb.jit(nopython=True)
 def _Gamma_fit_panel(F_New, X, y, indices, PSF, L, Ktilde, alpha, l1_ratio,
                      **kwargs):
     """helper function for estimating vectorized Gamma with panel"""
@@ -1555,7 +1557,7 @@ def _Gamma_fit_panel(F_New, X, y, indices, PSF, L, Ktilde, alpha, l1_ratio,
 
     return gamma
 
-
+@nb.jit(nopython=True)
 def _fit_cv(model, X, y, indices, PSF, n_splits, split_method, alpha,
             **kwargs):
     """inner function for fit_path doing CV
@@ -1636,7 +1638,7 @@ def _fit_cv(model, X, y, indices, PSF, n_splits, split_method, alpha,
 
     return np.array(mse_l)
 
-
+@nb.jit(nopython=True)
 def _BS_Walpha_sub(model, n, d):
     L, T = model.metad["L"], model.metad["T"]
     Q_b = np.full((L, T), np.nan)
@@ -1666,7 +1668,7 @@ def _BS_Walpha_sub(model, n, d):
 
     return Walpha_b
 
-
+@nb.jit(nopython=True)
 def _BS_Wbeta_sub(model, n, d, l):
     L, T = model.metad["L"], model.metad["T"]
     Q_b = np.full((L, T), np.nan)
@@ -1698,6 +1700,7 @@ def _BS_Wbeta_sub(model, n, d, l):
     Wbeta_l_b = np.trace(Wbeta_l_b)
     return Wbeta_l_b
 
+@nb.jit(nopython=True)
 def _BS_Wdelta_sub(model, n, d):
         L, T = model.metad["L"], model.metad["T"]
         Q_b = np.full((L, T), np.nan)
@@ -1730,26 +1733,26 @@ def _BS_Wdelta_sub(model, n, d):
         return Wdelta_b
 
 
-@jit(nopython=True)
+@nb.jit(nopython=True)
 def _numba_solve(m1, m2):
     return np.linalg.solve(np.ascontiguousarray(m1), np.ascontiguousarray(m2))
 
-@jit(nopython=True)
+@nb.jit(nopython=True)
 def _numba_lstsq(m1, m2):
     return np.linalg.lstsq(np.ascontiguousarray(m1), np.ascontiguousarray(m2))
 
-@jit(nopython=True)
+@nb.jit(nopython=True)
 def _numba_kron(m1, m2):
     return np.kron(np.ascontiguousarray(m1), np.ascontiguousarray(m2))
 
-@jit(nopython=True)
+@nb.jit(nopython=True)
 def _numba_chol(m1):
     return np.linalg.cholesky(np.ascontiguousarray(m1))
 
-@jit(nopython=True)
+@nb.jit(nopython=True)
 def _numba_svd(m1):
     return np.linalg.svd(np.ascontiguousarray(m1))
 
-@jit(nopython=True)
+@nb.jit(nopython=True)
 def _numba_full(m1, m2):
     return np.full(m1, m2)
